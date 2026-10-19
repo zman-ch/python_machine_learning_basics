@@ -4,3 +4,4 @@ __pycache__/
 
 # Temporary files of nbQA (pylint/black on notebooks)
 *_nbqa_ipynb.py
+.venv/
