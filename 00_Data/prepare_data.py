@@ -1,20 +1,29 @@
 """Download the raw data from the original sources and create the cleaned data sets in this folder.
 
 Run from the repository root:  python 00_Data/prepare_data.py
+Prepare only the email features from a trusted local source:
+    python 00_Data/prepare_data.py --email-source /path/to/email_data.csv
+Prepare only the Fashion-MNIST images (requires the transfer-learning dependencies):
+    python 00_Data/prepare_data.py --fashion-mnist
 
 Created files
 - car_fuel_consumption_2025.csv      fuel consumption of new car models, model year 2025 (Natural Resources Canada)
 - avalanche_accidents_switzerland.csv avalanche accidents in Switzerland since 1970/71 (SLF)
 - titanic.csv                        Titanic passengers (Kaggle)
+- email_spam.csv                     30,000 feature-only emails with fixed splits (--email-source only)
+- FashionMNIST/raw/                  official training/test images and labels (--fashion-mnist only)
 
 rental_apartments_canton_zh.csv (ZHAW course data) is not downloaded; it is part of the repository.
 
 The CSV files in this folder are the reference versions used in the notebooks. The original sources may change or
 become unavailable; in that case the script reports it and keeps the existing file.
 """
+import argparse
 import io
 import json
 import os
+from pathlib import Path
+import sys
 import tempfile
 import urllib.request
 import zipfile
@@ -105,7 +114,67 @@ def prepare_titanic():
     print('titanic.csv:', t.shape)
 
 
+def prepare_emails(source_path):
+    """Create a feature-only reference CSV without copying raw email text."""
+    helper_directory = Path(DATA_DIR).parent / '08_Neural_Networks' / 'HS2026'
+    sys.path.insert(0, str(helper_directory))
+    from enron_data import load_email_splits
+    from enron_features import EmailFeatures
+
+    splits = load_email_splits(source_path, max_messages=30_000, seed=7)
+    records = []
+    for name, frame in zip(['train', 'validation', 'test'], splits):
+        features = EmailFeatures().transform(frame)
+        features['label'] = frame['label'].to_numpy()
+        features['split'] = name
+        features['source_row'] = frame['source_row'].to_numpy()
+        features['message_key'] = frame['message_key'].to_numpy()
+        records.append(features)
+    prepared = pd.concat(records, ignore_index=True)
+    prepared.to_csv(Path(DATA_DIR) / 'email_spam.csv', index=False)
+    print('email_spam.csv:', prepared.shape)
+    print(prepared['split'].value_counts().to_string())
+
+
+def prepare_fashion_mnist():
+    """Store the official Fashion-MNIST IDX files in the repository data folder."""
+    from torchvision.datasets import FashionMNIST
+    from torchvision.datasets.utils import download_and_extract_archive
+
+    raw_directory = Path(DATA_DIR) / 'FashionMNIST' / 'raw'
+    raw_directory.mkdir(parents=True, exist_ok=True)
+    source_url = 'https://raw.githubusercontent.com/zalandoresearch/fashion-mnist/master/data/fashion/'
+    for archive_name, checksum in FashionMNIST.resources:
+        if not (raw_directory / archive_name.removesuffix('.gz')).is_file():
+            download_and_extract_archive(
+                source_url + archive_name,
+                download_root=os.path.join(CACHE_DIR, 'fashion-mnist'),
+                extract_root=str(raw_directory), md5=checksum,
+            )
+    for is_training, expected_count in [(True, 60_000), (False, 10_000)]:
+        dataset = FashionMNIST(root=DATA_DIR, train=is_training, download=False)
+        if tuple(dataset.data.shape) != (expected_count, 28, 28):
+            raise ValueError('Unexpected Fashion-MNIST image count or dimensions.')
+        if dataset.targets.unique().tolist() != list(range(10)):
+            raise ValueError('Unexpected Fashion-MNIST class labels.')
+        print('Fashion-MNIST', 'training' if is_training else 'test', 'images:', len(dataset))
+    print('Image data directory:', raw_directory)
+
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    source_options = parser.add_mutually_exclusive_group()
+    source_options.add_argument('--email-source', type=Path,
+                        help='Prepare only email_spam.csv from a trusted local raw email CSV.')
+    source_options.add_argument('--fashion-mnist', action='store_true',
+                                help='Prepare only the official Fashion-MNIST image files.')
+    arguments = parser.parse_args()
+    if arguments.email_source is not None:
+        prepare_emails(arguments.email_source)
+        sys.exit(0)
+    if arguments.fashion_mnist:
+        prepare_fashion_mnist()
+        sys.exit(0)
     # Each source is prepared separately: if one source is not reachable, the others are still prepared and the
     # existing CSV file of the unreachable source in this folder stays unchanged.
     for prepare in [prepare_cars, prepare_avalanches, prepare_titanic]:
