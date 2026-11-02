@@ -11,6 +11,7 @@ Welcome to the **Machine Learning Basics Course**! This course is designed to pr
 5. [Modules](#modules)
 6. [Neural Networks](#neural-networks)
 7. [Data](#data)
+8. [NLP and Transformers](#nlp-and-transformers)
 
 ## Introduction
 
@@ -20,7 +21,7 @@ The modules cover supervised and unsupervised learning. Neural networks are cove
 
 ## Course Structure
 
-Modules 01–07 and HS2026 Neural Networks Lectures 1-4 use the same three-notebook structure:
+Modules 01–07, HS2026 Neural Networks Lectures 1-4 and HS2026 NLP Lectures 1-4 use the same three-notebook structure:
 
 - `<topic>_concept.ipynb`: the idea in plain language, the most important formulas, a small worked example and provided demonstration code.
 - `<topic>_exercise.ipynb`: guided practice with one data set. Data preparation and plots are provided; fill a few marked code gaps and interpret the results.
@@ -124,6 +125,44 @@ These accompany the transfer-learning example in SW07 Lecture 4. This is supervi
 - **Mathematical Foundations:** Li, H. (2023). Machine Learning Methods. Springer Nature.
 - **In scikit-learn:** https://scikit-learn.org/stable/modules/neural_networks_supervised.html
 
+## NLP and Transformers
+
+[HS2026 NLP Lectures 1-4](09_NLP_Transformers/HS2026/README.md) follow the same
+concept/exercise/solution structure:
+
+- Lecture 1: text representations, a small word2vec trainer and job-category classification.
+- Lecture 2: self-attention, frozen BERT features, category classification and next-token prediction.
+- Lecture 3: multilingual E5 search, BM25, rank fusion and top-K evaluation.
+- Lecture 4: simulated featured-ad feedback, epsilon-greedy, sequential decisions and an RLHF outlook.
+
+Lecture 1's job-classification examples are synthetic. Lecture 2 uses the
+[5,011 real, cleaned, redacted job ads](00_Data/nlp_real_job_categories.csv.gz)
+behind Week 08 page 37, with the original chronological splits and category
+labels. It compares frequency, TF-IDF and frozen multilingual BERT using accuracy,
+macro-F1 and top-3 hit rate. The instructor confirmed distribution permission
+for this classification subset and repository audience.
+Lecture 3 evaluates retrieval on approved short excerpts with provisional
+judgments, then adds interactive BM25/E5/hybrid search over the same 5,011
+real ads. Its local E5 vector cache avoids re-encoding ads for each query.
+The larger collection has no full-ad relevance judgments and receives no
+automatic precision/recall scores.
+The source 30,000-ad Parquet file is not copied.
+Read the [data notes](00_Data/nlp_data_readme.md)
+before redistribution. First use of BERT/E5 downloads public weights; text is processed
+locally. The root requirements include the NLP dependencies for Python 3.11 Codespaces.
+Choose one short worked step for a lecture demonstration; the full exercises are
+separate practical work.
+
+The additional [word-map training activity](09_NLP_Transformers/HS2026/lecture1/word_relationships_exercise.ipynb)
+uses the included [email_spam_text.csv.gz](00_Data/email_spam_text.csv.gz),
+an authorised 30,000-email text subset with the original word2vec experiment's
+fixed partitions and row order. Students train word2vec, then choose their own
+words for a map like the example on page 17. No saved word-vector CSV is needed.
+Pandas reads the compressed email CSV directly; no separate upload is
+needed. See the [data notes](00_Data/nlp_data_readme.md) for distribution scope,
+privacy considerations and the distinction from the feature-only email CSV.
+Do not add further private email data or publish the full learned vocabulary.
+
 ## Data
 
 The tabular data sets and Fashion-MNIST images are stored in the folder [00_Data](00_Data/), so no Kaggle account or dataset download is needed for those examples. Lecture 3's separate MNIST digits dataset is downloaded by its NumPy reader on first use and cached after checksum verification. The script
@@ -138,6 +177,8 @@ used in the notebooks; the original sources may change or become unavailable ove
 | `car_fuel_consumption_2025.csv` | 701 new car models of model year 2025 (make, model, vehicle class, engine size, cylinders, transmission, fuel type, fuel consumption city/highway/combined in L/100 km, km per litre, CO₂ emissions) | Natural Resources Canada, [Fuel consumption ratings](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64); [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada) |
 | `avalanche_accidents_switzerland.csv` | 4'188 avalanche accidents in Switzerland since 1970/71 (location, terrain, danger level, activity, persons caught, buried and killed) | WSL Institute for Snow and Avalanche Research SLF, [EnviDat](https://www.envidat.ch/dataset/avalanche-accidents-in-switzerland-since-1970-71); [SLF terms of use](https://www.slf.ch/en/services-and-products/data-and-monitoring/slf-data-service.html) |
 | [email_spam.csv](00_Data/email_spam.csv) | 30,000 emails represented by 16 numeric features, a ham/spam label and fixed train/validation/test membership; no raw email text | Derived from the local copy of [Spam email dataset (Enron, TREC and others)](https://www.kaggle.com/datasets/nikhilchaudhary7108/spam-email-datasetenron-trec-and-others) |
+| [email_spam_text.csv.gz](00_Data/email_spam_text.csv.gz) | Authorised 30,000-email text subset for the word2vec activity; original labels, fixed partitions and row order preserved | Same source collection; instructor-confirmed distribution scope and privacy notes in [nlp_data_readme.md](00_Data/nlp_data_readme.md) |
+| [nlp_real_job_categories.csv.gz](00_Data/nlp_real_job_categories.csv.gz) | Authorised 5,011-ad real classification cohort from Week 08 page 37; 143 categories and fixed chronological splits | Local redacted Q3 2026 lecture collection; provenance, instructor-confirmed distribution scope and limitations in [nlp_data_readme.md](00_Data/nlp_data_readme.md) |
 | [FashionMNIST/raw/](00_Data/FashionMNIST/raw/) | 60,000 official training images and 10,000 test images, each 28 x 28 grayscale pixels, with ten-category labels in four uncompressed IDX files | Zalando Research, [Fashion-MNIST](https://github.com/zalandoresearch/fashion-mnist) |
 
 ### Fashion-MNIST image data
@@ -166,6 +207,6 @@ To recreate only this CSV, run from the repository root with a trusted local raw
 python 00_Data/prepare_data.py --email-source /path/to/email_data.csv
 ```
 
-This command does not download or regenerate the other datasets. It requires the local helpers beside the HS2026 notebook. Keep the original raw corpus outside this repository: the exported CSV omits email subjects, bodies, addresses and local filesystem paths. Counts and hashed message identifiers reduce text exposure but do not constitute a guarantee of anonymization. The source publisher's upstream rights and labels have not been independently audited; verify applicable permissions before redistribution.
+This command does not download or regenerate the other datasets, including the word2vec text subset. It requires the local helpers beside the HS2026 notebook. Keep the full original raw corpus outside this repository: the feature CSV exported by this command omits email subjects, bodies, addresses and local filesystem paths. Counts and hashed message identifiers reduce text exposure but do not constitute a guarantee of anonymization. The source publisher's upstream rights and labels have not been independently audited. The separately supplied word2vec text subset has instructor-confirmed distribution permission for the intended repository audience; see its data notes before redistribution.
 
-The optional pretrained-text extension cannot run from the feature-only CSV or reconstruct its original text. Set `RAW_EMAIL_PATH` in its first code cell to an authorized private copy of the original raw CSV. Before loading the encoder, the notebook checks that message identifiers, labels and source-row numbers reproduce every reference split. XGBoost and the sentence-transformer extension need additional packages beyond the base requirements; they are not required to inspect the included data.
+The optional pretrained-text extension cannot run from the feature-only CSV or reconstruct its original text. Set `RAW_EMAIL_PATH` in its first code cell to an authorized private copy of the original raw CSV. Before loading the encoder, the notebook checks that message identifiers, labels and source-row numbers reproduce every reference split. The root requirements now include Sentence Transformers for the NLP module; XGBoost remains an optional additional package. Neither extension is required to inspect the included data.
